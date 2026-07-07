@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useLiveSensing } from './hooks/useLiveSensing'
 import RadarSweep from './components/RadarSweep'
+import PoseViz from './components/PoseViz'
+import ScenarioBar from './components/ScenarioBar'
 import VitalsChart from './components/VitalsChart'
 import StatsGrid from './components/StatsGrid'
 import EventLog from './components/EventLog'
@@ -54,6 +56,16 @@ export default function App() {
         </section>
 
         <section className="layout__main">
+          <div className="panel">
+            <div className="panel__header">
+              <div>
+                <h3>Pose fusion</h3>
+                <p className="panel__sub">Wireframe reconstruction from CSI · 60 FPS</p>
+              </div>
+            </div>
+            <ScenarioBar active={data.scenario} onChange={data.setScenario} />
+            <PoseViz scenario={data.scenario} persons={data.persons} />
+          </div>
           <VitalsChart history={data.history} heartRate={data.heartRate} respiration={data.respiration} />
           <StatsGrid
             rssi={data.rssi}

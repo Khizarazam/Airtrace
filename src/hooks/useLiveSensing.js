@@ -17,6 +17,7 @@ const EVENT_TEMPLATES = [
 ]
 
 export function useLiveSensing() {
+  const [scenario, setScenario] = useState('vitals')
   const [connected, setConnected] = useState(false)
   const [heartRate, setHeartRate] = useState(72)
   const [respiration, setRespiration] = useState(15)
@@ -50,15 +51,22 @@ export function useLiveSensing() {
       setHeartRate((h) => walk(h, 58, 102, 3))
       setRespiration((r) => walk(r, 11, 20, 1))
       setRssi((r) => walk(r, -70, -38, 2))
-      setMotionVariance((m) => Math.max(0, walk(m, 0, 1, 0.15)))
+      setMotionVariance((m) => {
+        if (scenario === 'fall') return Math.min(1, walk(m, 0.6, 1, 0.3))
+        if (scenario === 'empty') return Math.max(0, walk(m, 0, 0.08, 0.05))
+        return Math.max(0, walk(m, 0, 1, 0.15))
+      })
       setConfidence((c) => Math.min(99, Math.max(62, walk(c, 62, 99, 4))))
 
-      // occasionally flip presence / person count for realism
-      if (Math.random() < 0.04) {
-        setPersons((p) => Math.max(0, Math.min(3, p + (Math.random() > 0.5 ? 1 : -1))))
-      }
-      if (Math.random() < 0.03) {
-        setPresence((p) => !p)
+      if (scenario === 'empty') {
+        setPersons(0)
+        setPresence(false)
+      } else if (scenario === 'multi') {
+        setPersons((p) => Math.max(2, Math.min(4, p + (Math.random() < 0.15 ? (Math.random() > 0.5 ? 1 : -1) : 0))))
+        setPresence(true)
+      } else {
+        setPersons(1)
+        setPresence(true)
       }
 
       setHistory((h) => {
@@ -76,7 +84,7 @@ export function useLiveSensing() {
     }, 1200)
 
     return () => clearInterval(interval)
-  }, [connected])
+  }, [connected, scenario])
 
   // refs so the interval closure always reads latest values without resubscribing
   const heartRateRef = useRef(heartRate)
@@ -85,6 +93,8 @@ export function useLiveSensing() {
   useEffect(() => { respirationRef.current = respiration }, [respiration])
 
   return {
+    scenario,
+    setScenario,
     connected,
     heartRate: Math.round(heartRate),
     respiration: Math.round(respiration * 10) / 10,

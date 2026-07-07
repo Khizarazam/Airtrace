@@ -154,6 +154,38 @@
   height: 100%;
 }
 
+/* ---------- Scenario bar ---------- */
+.scenario-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.scenario-bar__btn {
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.scenario-bar__btn:hover {
+  border-color: var(--signal-dim);
+  color: var(--text);
+}
+
+.scenario-bar__btn.is-active {
+  background: var(--signal-dim);
+  border-color: var(--signal);
+  color: var(--signal);
+}
+
 /* ---------- Vitals ---------- */
 .vitals__readouts {
   display: flex;

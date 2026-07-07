@@ -1,0 +1,36 @@
+.pose-viz {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: radial-gradient(circle at 50% 30%, #131A22 0%, #0A0D12 75%);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.pose-viz__svg {
+  width: 100%;
+  height: 100%;
+}
+
+.pose-viz__grid line {
+  stroke: rgba(140, 135, 247, 0.06);
+  stroke-width: 1;
+}
+
+.pose-bone {
+  stroke: var(--signal);
+  stroke-width: 2;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 3px rgba(62, 217, 197, 0.9));
+}
+
+.pose-joint {
+  fill: #ffffff;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.9));
+}
+
+.pose-viz__empty-text {
+  fill: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+}
