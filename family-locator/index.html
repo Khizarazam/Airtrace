@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Family Locator</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<style>
+  :root {
+    --bg: #0F1115;
+    --panel: #171A21;
+    --border: #262B36;
+    --accent: #4FD1B5;
+    --accent-dim: #1F4A42;
+    --warn: #F2A65A;
+    --text: #ECEFF3;
+    --text-dim: #8B93A3;
+    --danger: #E56B6B;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', Inter, system-ui, sans-serif;
+    min-height: 100vh;
+  }
+  .wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 {
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+  header p {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+  }
+  .badge {
+    font-size: 0.7rem;
+    font-family: monospace;
+    color: var(--warn);
+    border: 1px solid rgba(242,166,90,0.35);
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+  }
+  .notice {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+  .notice b { color: var(--warn); }
+  input[type="text"] {
+    width: 100%;
+    background: #10131A;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+  }
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  .btn-primary { background: var(--accent); color: #06231D; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  #map {
+    height: 360px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .status-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+  }
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--text-dim);
+  }
+  .dot.on { background: var(--accent); box-shadow: 0 0 8px 1px rgba(79,209,181,0.6); }
+  .people-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .person {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;
+    font-size: 0.85rem;
+  }
+  .person__name { font-weight: 600; }
+  .person__meta { color: var(--text-dim); font-size: 0.75rem; }
+  .pill { font-family: monospace; font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; }
+  .pill.home { background: rgba(79,209,181,0.15); color: var(--accent); }
+  .pill.away { background: rgba(242,166,90,0.15); color: var(--warn); }
+  .setup { display: flex; flex-direction: column; gap: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>🏠 Family Locator</h1>
+      <p>Consent-based live location — sirf wahi log dikhte hain jo khud share karte hain</p>
+    </div>
+    <span class="badge">SHARED DATA — visible to anyone with this link</span>
+  </header>
+
+  <div class="panel notice">
+    <b>Privacy:</b> Jab aap "Share my location" dabayenge, tab hi aapki location baaki logon ko dikhegi.
+    Aap kabhi bhi "Stop sharing" se apni location hata sakte hain. Ye data sab family members ko visible hai
+    jo isi link/artifact ko open karte hain.
+  </div>
+
+  <div class="panel setup" id="setupPanel">
+    <div class="row">
+      <input type="text" id="nameInput" placeholder="Apna naam likhein (e.g. Ali)" />
+      <button class="btn-primary" id="shareBtn">Share my location</button>
+    </div>
+    <div class="status-line">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">Location share nahi ho rahi</span>
+    </div>
+    <div class="row">
+      <button class="btn-secondary" id="setHomeBtn">📍 Set my current spot as "Home"</button>
+      <button class="btn-danger" id="stopBtn" style="display:none;">Stop sharing</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div id="map"></div>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-bottom:12px; font-size:0.95rem;">Family members</h3>
+    <ul class="people-list" id="peopleList">
+      <li class="notice">Koi bhi abhi location share nahi kar raha.</li>
+    </ul>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(function () {
+  let map, markersLayer;
+  let watchId = null;
+  let myName = null;
+  let homePos = null;
+
+  function initMap() {
+    map = L.map('map', { zoomControl: true }).setView([24.8607, 67.0011], 14); // default Karachi-ish, will recenter
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    markersLayer = L.layerGroup().addTo(map);
+  }
+
+  function haversine(lat1, lon1, lat2, lon2) {
+    const R = 6371000;
+    const toRad = (d) => (d * Math.PI) / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(a));
+  }
+
+  function timeAgo(ts) {
+    const s = Math.floor((Date.now() - ts) / 1000);
+    if (s < 10) return 'abhi abhi';
+    if (s < 60) return s + 's pehle';
+    const m = Math.floor(s / 60);
+    if (m < 60) return m + 'm pehle';
+    return Math.floor(m / 60) + 'h pehle';
+  }
+
+  async function loadHome() {
+    try {
+      const res = await window.storage.get('home', true);
+      if (res) homePos = JSON.parse(res.value);
+    } catch (e) { homePos = null; }
+  }
+
+  async function setHome(lat, lng) {
+    homePos = { lat, lng };
+    try {
+      await window.storage.set('home', JSON.stringify(homePos), true);
+    } catch (e) { console.error('Failed to save home', e); }
+  }
+
+  async function publishLocation(pos) {
+    if (!myName) return;
+    const payload = {
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude,
+      accuracy: pos.coords.accuracy,
+      ts: Date.now(),
+    };
+    try {
+      await window.storage.set('loc:' + myName, JSON.stringify(payload), true);
+    } catch (e) {
+      console.error('Failed to publish location', e);
+    }
+  }
+
+  async function removeMyLocation() {
+    if (!myName) return;
+    try {
+      await window.storage.delete('loc:' + myName, true);
+    } catch (e) { /* key may not exist */ }
+  }
+
+  async function refreshPeople() {
+    let keys = [];
+    try {
+      const res = await window.storage.list('loc:', true);
+      keys = res ? res.keys : [];
+    } catch (e) { keys = []; }
+
+    const people = [];
+    for (const k of keys) {
+      try {
+        const res = await window.storage.get(k, true);
+        if (res) {
+          const data = JSON.parse(res.value);
+          const name = k.replace('loc:', '');
+          people.push({ name, ...data });
+        }
+      } catch (e) { /* skip missing */ }
+    }
+
+    renderPeople(people);
+    renderMap(people);
+  }
+
+  function renderPeople(people) {
+    const list = document.getElementById('peopleList');
+    if (people.length === 0) {
+      list.innerHTML = '<li class="notice">Koi bhi abhi location share nahi kar raha.</li>';
+      return;
+    }
+    list.innerHTML = '';
+    people.sort((a, b) => a.name.localeCompare(b.name));
+    for (const p of people) {
+      const li = document.createElement('li');
+      li.className = 'person';
+      let distText = '';
+      let pillClass = 'away';
+      let pillText = 'Location known';
+      if (homePos) {
+        const d = haversine(p.lat, p.lng, homePos.lat, homePos.lng);
+        if (d < 60) {
+          pillClass = 'home';
+          pillText = 'Ghar par';
+        } else if (d < 1000) {
+          pillClass = 'away';
+          pillText = Math.round(d) + 'm door';
+        } else {
+          pillClass = 'away';
+          pillText = (d / 1000).toFixed(1) + 'km door';
+        }
+      }
+      li.innerHTML = `
+        <div>
+          <div class="person__name">${p.name}${p.name === myName ? ' (aap)' : ''}</div>
+          <div class="person__meta">Last update: ${timeAgo(p.ts)} · ±${Math.round(p.accuracy)}m accuracy</div>
+        </div>
+        <span class="pill ${pillClass}">${pillText}</span>
+      `;
+      list.appendChild(li);
+    }
+  }
+
+  function renderMap(people) {
+    markersLayer.clearLayers();
+    const bounds = [];
+
+    if (homePos) {
+      const homeIcon = L.divIcon({
+        html: '🏠',
+        className: '',
+        iconSize: [24, 24],
+      });
+      L.marker([homePos.lat, homePos.lng], { icon: homeIcon }).addTo(markersLayer).bindTooltip('Home');
+      bounds.push([homePos.lat, homePos.lng]);
+    }
+
+    for (const p of people) {
+      const icon = L.divIcon({
+        html: `<div style="background:${p.name === myName ? '#4FD1B5' : '#8C87F7'};width:14px;height:14px;border-radius:50%;border:2px solid #0F1115;"></div>`,
+        className: '',
+        iconSize: [14, 14],
+      });
+      L.marker([p.lat, p.lng], { icon }).addTo(markersLayer).bindTooltip(p.name);
+      bounds.push([p.lat, p.lng]);
+    }
+
+    if (bounds.length > 0) {
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 17 });
+    }
+  }
+
+  function setStatus(on, text) {
+    document.getElementById('statusDot').classList.toggle('on', on);
+    document.getElementById('statusText').textContent = text;
+  }
+
+  document.getElementById('shareBtn').addEventListener('click', () => {
+    const name = document.getElementById('nameInput').value.trim();
+    if (!name) { alert('Pehle apna naam likhein'); return; }
+    if (!navigator.geolocation) { alert('Ye browser location support nahi karta'); return; }
+
+    myName = name;
+    document.getElementById('nameInput').disabled = true;
+    document.getElementById('shareBtn').disabled = true;
+    document.getElementById('stopBtn').style.display = 'inline-block';
+    setStatus(true, 'Location share ho rahi hai (' + name + ')');
+
+    watchId = navigator.geolocation.watchPosition(
+      (pos) => publishLocation(pos),
+      (err) => {
+        console.error(err);
+        setStatus(false, 'Location error: ' + err.message);
+      },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+    );
+  });
+
+  document.getElementById('stopBtn').addEventListener('click', async () => {
+    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+    await removeMyLocation();
+    document.getElementById('nameInput').disabled = false;
+    document.getElementById('shareBtn').disabled = false;
+    document.getElementById('stopBtn').style.display = 'none';
+    setStatus(false, 'Location share nahi ho rahi');
+    myName = null;
+    refreshPeople();
+  });
+
+  document.getElementById('setHomeBtn').addEventListener('click', () => {
+    if (!navigator.geolocation) { alert('Ye browser location support nahi karta'); return; }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setHome(pos.coords.latitude, pos.coords.longitude);
+        refreshPeople();
+      },
+      (err) => alert('Home location set nahi ho saki: ' + err.message)
+    );
+  });
+
+  (async function start() {
+    initMap();
+    await loadHome();
+    await refreshPeople();
+    setInterval(refreshPeople, 5000);
+  })();
+})();
+</script>
+</body>
+</html>
