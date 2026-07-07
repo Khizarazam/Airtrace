@@ -1,0 +1,102 @@
+.radar {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-width: 340px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, #0F141C 0%, #0A0D12 70%);
+  border: 1px solid var(--panel-border);
+  overflow: hidden;
+}
+
+.radar__ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid var(--panel-border);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.radar__ring--1 { width: 33%; height: 33%; }
+.radar__ring--2 { width: 66%; height: 66%; }
+.radar__ring--3 { width: 96%; height: 96%; }
+
+.radar__ring.is-live {
+  border-color: rgba(62, 217, 197, 0.18);
+}
+
+.radar__crosshair {
+  position: absolute;
+  background: var(--panel-border);
+  opacity: 0.6;
+}
+.radar__crosshair--h { top: 50%; left: 2%; right: 2%; height: 1px; }
+.radar__crosshair--v { left: 50%; top: 2%; bottom: 2%; width: 1px; }
+
+.radar__sweep {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 300deg,
+    rgba(62, 217, 197, 0.28) 350deg,
+    rgba(62, 217, 197, 0.55) 360deg
+  );
+  animation: sweep 3.2s linear infinite;
+  border-radius: 50%;
+}
+
+@keyframes sweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.radar__blip {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  background: var(--signal);
+  box-shadow: 0 0 12px 2px rgba(62, 217, 197, 0.7);
+  animation: blip-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes blip-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+.radar__center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: rgba(10, 13, 18, 0.7);
+  padding: 10px 16px;
+  border-radius: 12px;
+}
+
+.radar__count {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.radar__count-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}

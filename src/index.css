@@ -1,0 +1,46 @@
+:root {
+  --bg: #0A0D12;
+  --panel: #12161E;
+  --panel-border: #1E2530;
+  --signal: #3ED9C5;
+  --signal-dim: #1E5C56;
+  --amber: #F2A65A;
+  --violet: #8C87F7;
+  --text: #E8ECF1;
+  --text-dim: #8A94A6;
+  --text-faint: #4C5561;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-body: 'Inter', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::selection {
+  background: var(--signal-dim);
+  color: var(--text);
+}
+
+button {
+  font-family: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
